@@ -1,39 +1,27 @@
-import {
-  AdResponsive,
-  GO_LOOTBAR_LINK,
-  go_lootbar_banner,
-} from '@genshin-optimizer/common/ad'
 import { CardThemed } from '@genshin-optimizer/common/ui'
-import { GOAdWrapper } from '@genshin-optimizer/gi/ui'
-import DescriptionIcon from '@mui/icons-material/Description'
 import {
   Box,
-  CardActionArea,
   CardContent,
-  CardHeader,
-  Divider,
   Grid,
   Link,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { useEffect, useState } from 'react'
-import ReactGA from 'react-ga4'
 import { Trans, useTranslation } from 'react-i18next'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import InventoryCard from './InventoryCard'
 import QuickLinksCard from './QuickLinksCard'
 import ResinCard from './ResinCard'
 import TeamCard from './TeamCard'
 import VidGuideCard from './VidGuideCard'
 
-declare const __VERSION__: string
+/**
+ * Web build: the Lootbar affiliate banner and the GitHub-hosted patch-notes
+ * fetch are gone — this app talks to nothing but its own origin.
+ */
 export default function PageHome() {
   const theme = useTheme()
   const lg = useMediaQuery(theme.breakpoints.up('lg'))
-  ReactGA.send({ hitType: 'pageview', page: '/home' })
   if (lg)
     return (
       <Grid container spacing={2} direction={'row-reverse'}>
@@ -47,7 +35,6 @@ export default function PageHome() {
         >
           <QuickLinksCard />
           <ResinCard />
-          <AdResponsive dataAdSlot="6687816711" Ad={GOAdWrapper} />
         </Grid>
         <Grid
           sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
@@ -58,10 +45,8 @@ export default function PageHome() {
           }}
         >
           <IntroCard />
-          <LootbarCard />
           <InventoryCard />
           <VidGuideCard />
-          <PatchNotesCard />
           <TeamCard />
         </Grid>
       </Grid>
@@ -76,12 +61,10 @@ export default function PageHome() {
       }}
     >
       <IntroCard />
-      <LootbarCard />
       <QuickLinksCard />
       <InventoryCard />
       <ResinCard />
       <VidGuideCard />
-      <PatchNotesCard />
       <TeamCard />
     </Box>
   )
@@ -107,63 +90,6 @@ function IntroCard() {
             with what you have.
           </Trans>
         </Typography>
-      </CardContent>
-    </CardThemed>
-  )
-}
-function LootbarCard() {
-  return (
-    <CardThemed>
-      <CardActionArea
-        LinkComponent={Link}
-        href={GO_LOOTBAR_LINK}
-        target="_blank"
-        sx={{ margin: 'auto' }}
-        aria-label="Visit Lootbar.gg for Genshin Impact top-ups"
-      >
-        <Box
-          component="img"
-          alt="Lootbar.gg Banner"
-          src={go_lootbar_banner}
-          sx={{ width: '100%', height: 'auto', marginBottom: '-7px' }}
-        />
-      </CardActionArea>
-    </CardThemed>
-  )
-}
-function PatchNotesCard() {
-  const { t } = useTranslation('page_home')
-  const [{ isLoaded, text }, setState] = useState({ isLoaded: false, text: '' })
-  useEffect(() => {
-    const regex = /^(\d+)\.(\d+)\.(\d+)$/
-    const minorVersion = __VERSION__.replace(regex, `$1.$2.${0}`)
-    fetch(process.env['NX_URL_GITHUB_API_GO_RELEASES'] + minorVersion)
-      .then((res) => res.arrayBuffer())
-      .then((buffer) => {
-        const decoder = new TextDecoder('utf-8')
-        const data = decoder.decode(buffer)
-        const release = JSON.parse(data)
-        setState({ isLoaded: true, text: release.body })
-      })
-      .catch((err) => console.log(`Error: ${err.message}`))
-  }, [])
-  return (
-    <CardThemed>
-      <CardHeader
-        title={
-          <Typography variant="h5">
-            {t('quickLinksCard.buttons.patchNotes.title')}
-          </Typography>
-        }
-        avatar={<DescriptionIcon fontSize="large" />}
-      />
-      <Divider />
-      <CardContent>
-        {isLoaded ? (
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
-        ) : (
-          'Loading...'
-        )}
       </CardContent>
     </CardThemed>
   )

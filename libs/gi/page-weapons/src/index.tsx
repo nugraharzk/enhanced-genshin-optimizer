@@ -41,7 +41,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import ReactGA from 'react-ga4'
 import { useTranslation } from 'react-i18next'
 import WeaponFilter, { WeaponRedButtons } from './WeaponFilter'
 
@@ -57,7 +56,6 @@ export default function PageWeapon() {
   const [newWeaponModalShow, onNewWeaponModalShow, onNewWeaponModalHide] =
     useBoolState(false)
   useEffect(() => {
-    ReactGA.send({ hitType: 'pageview', page: '/weapon' })
   }, [])
 
   const brPt = useMediaQueryUp()
