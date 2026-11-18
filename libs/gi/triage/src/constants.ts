@@ -5,8 +5,8 @@ import type {
 } from '@genshin-optimizer/gi/consts'
 import type { Verdict } from './types'
 
-export const KEEP_THRESHOLD = 12
-export const MAYBE_THRESHOLD = 6
+export const KEEP_THRESHOLD = 34
+export const MAYBE_THRESHOLD = 16
 export const WEIGHTS_VERSION = 1
 
 export function verdictFor(value: number): Verdict {
