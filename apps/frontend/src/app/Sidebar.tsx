@@ -76,7 +76,7 @@ export default function Sidebar({
                     to={item.to}
                     onClick={onNavigate}
                     aria-current={active ? 'page' : undefined}
-                    className={`group relative flex items-center gap-2.5 rounded-[calc(var(--go-radius)-4px)] px-2.5 py-1.5 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
+                    className={`group relative flex items-center gap-2.5 rounded-[max(calc(var(--go-radius)-4px),4px)] px-2.5 py-1.5 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 ${
                       active
                         ? 'bg-accent/12 text-accent'
                         : 'text-fg-dim hover:bg-surface2 hover:text-fg'

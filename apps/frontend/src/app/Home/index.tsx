@@ -1,5 +1,8 @@
 import {
+  Database,
   Flower,
+  FolderSync,
+  HardDriveDownload,
   ScanLine,
   Swords,
   Upload,
@@ -50,11 +53,19 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 font-sans">
-      <header>
-        <h1 className="text-title text-lg">Home</h1>
-        <p className="mt-0.5 text-xs text-fg-dim">
-          Everything runs locally: optimizer, database, and backups
-        </p>
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-fg sm:text-2xl">
+            Overview
+          </h1>
+          <p className="mt-0.5 text-xs text-fg-dim">
+            Local theorycrafting workspace: optimizer, database, and backups
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-fg-dim sm:self-auto">
+          <span className="size-2 rounded-full bg-emerald-500" />
+          <span>Local Storage Active</span>
+        </div>
       </header>
 
       <section aria-label="Inventory" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -104,21 +115,22 @@ export default function HomePage() {
       )}
 
       <section aria-label="Quick actions" className="flex flex-wrap gap-2">
-        <RouterLink to="/artifacts" className={quickBtn}>
-          <Flower className="size-4 shrink-0 text-accent" />
-          Artifacts
+        <RouterLink to="/setting" className={quickBtn}>
+          <Upload className="size-4 shrink-0 text-accent" />
+          Impor Database (GOOD)
         </RouterLink>
-        <RouterLink to="/teams" className={quickBtn}>
-          <UsersRound className="size-4 shrink-0 text-accent" />
-          Teams
+        <RouterLink to="/scanner" className={quickBtn}>
+          <ScanLine className="size-4 shrink-0 text-accent" />
+          Scan Artefak (OCR)
         </RouterLink>
-        <RouterLink to="/tools" className={quickBtn}>
+        <RouterLink to="/characters" className={quickBtn}>
           <Wrench className="size-4 shrink-0 text-accent" />
-          Tools
+          Build Optimizer
         </RouterLink>
         {invoke && (
           <button type="button" onClick={backup} className={quickBtn}>
-            Save backup
+            <HardDriveDownload className="size-4 shrink-0 text-accent" />
+            Save Backup
           </button>
         )}
         {invoke && (
@@ -129,12 +141,62 @@ export default function HomePage() {
             }
             className={quickBtn}
           >
-            {capture.running ? 'Stop capture' : 'Capture now'}
+            {capture.running ? 'Stop Capture' : 'Capture Now'}
           </button>
         )}
       </section>
 
-      {invoke && <CaptureCard {...capture} />}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <section
+          aria-label="Storage status"
+          className="rounded-go border border-line bg-surface p-4 shadow-go-sm"
+        >
+          <div className="flex items-center gap-2">
+            <Database className="size-4 text-accent" />
+            <span className="text-[13px] font-semibold text-fg">
+              Storage & Persistence
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-fg-dim">
+            Semua kalkulasi, artefak, dan karakter tersimpan secara aman di perangkat lokal Anda tanpa cloud pihak ketiga.
+          </p>
+          <div className="mt-3 flex items-center gap-3 text-xs text-fg-dim">
+            <RouterLink
+              to="/setting"
+              className="font-medium text-accent hover:underline"
+            >
+              Kelola Database & Backup &rarr;
+            </RouterLink>
+          </div>
+        </section>
+
+        {invoke ? (
+          <CaptureCard {...capture} />
+        ) : (
+          <section
+            aria-label="Desktop sync"
+            className="rounded-go border border-line bg-surface p-4 shadow-go-sm"
+          >
+            <div className="flex items-center gap-2">
+              <FolderSync className="size-4 text-accent" />
+              <span className="text-[13px] font-semibold text-fg">
+                Web & Desktop Shared Hub
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-fg-dim">
+              Versi web ini dapat tersinkronisasi otomatis dengan aplikasi desktop lewat file basis data bersama di AppData.
+            </p>
+            <div className="mt-3 flex items-center gap-3 text-xs text-fg-dim">
+              <RouterLink
+                to="/doc"
+                className="font-medium text-accent hover:underline"
+              >
+                Dokumentasi & Fitur &rarr;
+              </RouterLink>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   )
 }

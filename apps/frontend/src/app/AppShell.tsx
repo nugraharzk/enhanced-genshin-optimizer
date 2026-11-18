@@ -54,17 +54,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div
       className="min-h-screen font-sans text-fg"
       style={{
-        background:
-          'radial-gradient(ellipse 110% 60% at 50% 0%, color-mix(in srgb, var(--go-accent) 7%, var(--go-bg)) 0%, var(--go-bg) 55%) fixed',
+        background: 'var(--go-bg)',
       }}
     >
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-line bg-surface/70 backdrop-blur md:block">
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-line bg-surface md:block">
           <Sidebar onOpenPalette={() => setPaletteOpen(true)} />
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-surface/85 px-2.5 py-2 backdrop-blur md:hidden">
+          <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-surface px-2.5 py-2 md:hidden">
             <button
               type="button"
               aria-label="Open navigation"

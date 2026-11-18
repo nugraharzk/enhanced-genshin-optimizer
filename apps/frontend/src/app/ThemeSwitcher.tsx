@@ -17,7 +17,7 @@ export default function ThemeSwitcher({ wide = false }: { wide?: boolean }) {
     <DropdownMenu.Item
       key={t.id}
       onSelect={() => setThemeId(t.id)}
-      className="flex cursor-pointer items-center gap-2.5 rounded-[calc(var(--go-radius)-5px)] px-2 py-1.5 text-sm text-fg outline-none select-none data-[highlighted]:bg-surface2"
+      className="flex cursor-pointer items-center gap-2.5 rounded-[max(calc(var(--go-radius)-4px),4px)] px-2 py-1.5 text-sm text-fg outline-none select-none data-[highlighted]:bg-surface2"
     >
       {/* two-tone swatch: page background behind the accent colour */}
       <span

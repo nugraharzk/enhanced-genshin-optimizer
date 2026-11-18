@@ -12,7 +12,7 @@ import { dumpStorage, useCapture } from './useCapture'
 import { toast } from './toast'
 
 const itemCls =
-  'flex cursor-pointer items-center gap-2.5 rounded-[calc(var(--go-radius)-5px)] px-2 py-1.5 text-sm text-fg outline-none select-none data-[highlighted]:bg-surface2'
+  'flex cursor-pointer items-center gap-2.5 rounded-[max(calc(var(--go-radius)-4px),4px)] px-2 py-1.5 text-sm text-fg outline-none select-none data-[highlighted]:bg-surface2'
 
 /**
  * In-SPA replacement for the injected floating DOM panel: backups, restore,
