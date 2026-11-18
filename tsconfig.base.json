@@ -145,6 +145,7 @@
       "@genshin-optimizer/gi/solver-tc": ["./libs/gi/solver-tc/src/index.ts"],
       "@genshin-optimizer/gi/stats": ["./libs/gi/stats/src/index.ts"],
       "@genshin-optimizer/gi/svgicons": ["./libs/gi/svgicons/src/index.ts"],
+      "@genshin-optimizer/gi/triage": ["./libs/gi/triage/src/index.ts"],
       "@genshin-optimizer/gi/theme": ["./libs/gi/theme/src/index.ts"],
       "@genshin-optimizer/gi/ui": ["./libs/gi/ui/src/index.ts"],
       "@genshin-optimizer/gi/uidata": ["./libs/gi/uidata/src/index.ts"],
