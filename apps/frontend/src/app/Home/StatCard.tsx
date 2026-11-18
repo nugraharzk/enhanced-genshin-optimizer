@@ -16,13 +16,13 @@ export default function StatCard({
   return (
     <RouterLink
       to={to}
-      className="rounded-go border border-line bg-surface p-4 outline-none transition-colors hover:border-line-strong focus-visible:ring-2 focus-visible:ring-accent/60"
+      className="group flex cursor-pointer flex-col justify-between rounded-go border border-line bg-surface p-4 outline-none transition-all hover:border-line-strong hover:bg-surface2/50 hover:shadow-go-sm focus-visible:ring-2 focus-visible:ring-accent/60"
     >
-      <div className="flex items-center gap-2 text-[13px] font-medium text-fg-dim">
-        <Icon className="size-4 shrink-0 text-accent" />
+      <div className="flex items-center gap-2 text-[13px] font-medium text-fg-dim group-hover:text-fg">
+        <Icon className="size-4 shrink-0 text-accent transition-transform group-hover:scale-110" />
         <span className="truncate">{label}</span>
       </div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums text-fg">
+      <div className="mt-2 text-2xl font-semibold tabular-nums text-fg">
         {count}
       </div>
     </RouterLink>

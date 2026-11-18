@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { getInvoke } from '../tauri'
 
 // Subscribers for each GOOD dump the capture poll produces. Module-level so
-// the poll survives renders — consumers (Home dashboard) register once.
+// the poll survives renders: consumers (Home dashboard) register once.
 const capturedCbs = new Set<(good: string) => void>()
 
 export function onCaptured(cb: (good: string) => void): () => void {
@@ -83,7 +83,7 @@ async function arm() {
         const good = (await inv('take_capture')) as string | null
         if (good) for (const cb of capturedCbs) cb(good)
       } catch {
-        // Worker died mid-session — stop the poll instead of throwing
+        // Worker died mid-session: stop the poll instead of throwing
         // unhandled rejections every tick while the UI says "running".
         stopWatching()
       }
@@ -146,7 +146,7 @@ export function useAutoBackup() {
     inv('save_backup', { json: JSON.stringify(dumpStorage()) })
       .then(() => localStorage.setItem('__lastAutoBackup', today))
       .catch(() => {
-        // No stamp on failure — retry next mount.
+        // No stamp on failure: retry next mount.
       })
   }, [])
 }

@@ -1,4 +1,12 @@
-import { Flower, Swords, Users, UsersRound, Wrench } from 'lucide-react'
+import {
+  Flower,
+  ScanLine,
+  Swords,
+  Upload,
+  Users,
+  UsersRound,
+  Wrench,
+} from 'lucide-react'
 import type { ComponentType } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useNavCounts } from '../nav'
@@ -45,7 +53,7 @@ export default function HomePage() {
       <header>
         <h1 className="text-title text-lg">Home</h1>
         <p className="mt-0.5 text-xs text-fg-dim">
-          Everything runs local — optimizer, database, backups
+          Everything runs locally: optimizer, database, and backups
         </p>
       </header>
 
@@ -60,6 +68,40 @@ export default function HomePage() {
           />
         ))}
       </section>
+
+      {counts.arts === 0 && counts.chars === 0 && (
+        <section
+          aria-label="Getting started"
+          className="rounded-go border border-line bg-surface p-4 shadow-go-sm"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-fg">
+                Database masih kosong
+              </h2>
+              <p className="mt-1 text-xs text-fg-dim">
+                Mulai dengan mengimpor inventaris (GOOD JSON) atau lakukan scan artefak dari game Anda.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <RouterLink
+                to="/setting"
+                className="flex cursor-pointer items-center gap-2 rounded-go bg-accent px-3 py-1.5 text-xs font-semibold text-accent-fg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent/60"
+              >
+                <Upload className="size-3.5 shrink-0" />
+                Impor GOOD JSON
+              </RouterLink>
+              <RouterLink
+                to="/scanner"
+                className="flex cursor-pointer items-center gap-2 rounded-go border border-line bg-surface2 px-3 py-1.5 text-xs font-medium text-fg outline-none transition-colors hover:border-line-strong hover:text-fg focus-visible:ring-2 focus-visible:ring-accent/60"
+              >
+                <ScanLine className="size-3.5 shrink-0 text-accent" />
+                Buka Scanner
+              </RouterLink>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section aria-label="Quick actions" className="flex flex-wrap gap-2">
         <RouterLink to="/artifacts" className={quickBtn}>

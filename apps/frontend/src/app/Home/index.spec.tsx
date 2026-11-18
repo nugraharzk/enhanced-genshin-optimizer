@@ -3,7 +3,7 @@ import { HashRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HomePage from './index'
 
-// Counts are the dashboard's whole data story — pin them.
+// Counts are the dashboard's whole data story: pin them.
 vi.mock('../nav', () => ({
   NAV_ITEMS: [],
   NAV_GROUPS: [],

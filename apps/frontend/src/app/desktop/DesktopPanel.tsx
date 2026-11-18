@@ -66,7 +66,7 @@ function Panel({
       const data = JSON.parse(json) as Record<string, string>
       localStorage.clear()
       for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v)
-      toast(`Restored — current state saved to ${safePath}`)
+      toast(`Restored: current state saved to ${safePath}`)
       setTimeout(() => location.reload(), 1000)
     } catch (e) {
       toast(String(e), true)

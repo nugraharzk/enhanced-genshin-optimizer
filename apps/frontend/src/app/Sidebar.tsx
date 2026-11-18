@@ -89,9 +89,9 @@ export default function Sidebar({
                     <span className="flex-1 truncate">{t(item.i18Key)}</span>
                     {n ? (
                       <span
-                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${
+                        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
                           active
-                            ? 'bg-accent/15 text-accent'
+                            ? 'bg-accent text-accent-fg'
                             : 'bg-surface2 text-fg-dim'
                         }`}
                       >

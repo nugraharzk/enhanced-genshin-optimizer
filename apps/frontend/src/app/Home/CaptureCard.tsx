@@ -44,7 +44,7 @@ export default function CaptureCard({
         try {
           database.importGOOD(JSON.parse(good), true, true, false)
         } catch {
-          // Bad dump — reload anyway; the DB keeps its prior state.
+          // Bad dump: reload anyway; the DB keeps its prior state.
         }
         setTimeout(() => location.reload(), 800)
       }),
@@ -54,7 +54,7 @@ export default function CaptureCard({
   const state = importing
     ? 'importing…'
     : running
-      ? 'armed — waiting for Genshin login'
+      ? 'armed: waiting for Genshin login'
       : 'idle'
 
   return (
