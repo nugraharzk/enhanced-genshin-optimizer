@@ -98,7 +98,7 @@ function Panel({
           align="start"
           sideOffset={8}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          className="z-[2200] min-w-56 rounded-go border border-line-strong bg-surface p-1.5 shadow-2xl shadow-black/40"
+          className="z-[2200] min-w-56 rounded-go border border-line-strong bg-surface p-1.5 shadow-go-lg data-[state=open]:animate-go-in"
         >
           <DropdownMenu.Item onSelect={backup} className={itemCls}>
             <HardDriveDownload className="size-4 shrink-0 text-accent" />
@@ -114,7 +114,7 @@ function Panel({
             <DropdownMenu.Portal>
               <DropdownMenu.SubContent
                 sideOffset={4}
-                className="z-[2200] max-h-[60vh] min-w-52 overflow-y-auto rounded-go border border-line-strong bg-surface p-1.5 shadow-2xl shadow-black/40"
+                className="z-[2200] max-h-[60vh] min-w-52 overflow-y-auto rounded-go border border-line-strong bg-surface p-1.5 shadow-go-lg data-[state=open]:animate-go-in"
               >
                 {backups.length === 0 ? (
                   <DropdownMenu.Label className="px-2 py-1.5 text-xs text-fg-dim">

@@ -59,7 +59,7 @@ export default function Sidebar({
       <nav className="mt-2 flex min-h-0 flex-1 flex-col overflow-y-auto">
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-3 last:mb-0">
-            <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-dim">
+            <div className="text-label px-2.5 pb-1">
               {group.label}
             </div>
             <div className="flex flex-col gap-0.5">

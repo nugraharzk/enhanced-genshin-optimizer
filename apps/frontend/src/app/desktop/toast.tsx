@@ -35,7 +35,7 @@ export function Toaster() {
       {items.map((i) => (
         <div
           key={i.id}
-          className={`max-w-sm rounded-go px-3 py-2 text-sm shadow-2xl shadow-black/40 ${
+          className={`max-w-sm rounded-go px-3 py-2 text-sm shadow-go-lg animate-go-in ${
             i.bad
               ? 'bg-red-500 text-white'
               : 'border border-line-strong bg-surface text-fg'

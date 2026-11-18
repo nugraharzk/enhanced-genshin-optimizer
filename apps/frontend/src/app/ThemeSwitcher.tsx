@@ -62,7 +62,7 @@ export default function ThemeSwitcher({ wide = false }: { wide?: boolean }) {
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
-          className="z-[2200] max-h-[72vh] min-w-64 overflow-y-auto rounded-go border border-line-strong bg-surface p-1.5 shadow-2xl shadow-black/40"
+          className="z-[2200] max-h-[72vh] min-w-64 overflow-y-auto rounded-go border border-line-strong bg-surface p-1.5 shadow-go-lg data-[state=open]:animate-go-in"
         >
           <DropdownMenu.Label className="px-2 py-1 text-[11px] font-semibold tracking-wider text-fg-dim uppercase">
             Dark

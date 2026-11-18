@@ -120,7 +120,7 @@ export default function CommandPalette({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[3000] bg-black/50 backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed left-1/2 top-[10vh] z-[3001] w-[min(92vw,42rem)] -translate-x-1/2 overflow-hidden rounded-go border border-line-strong bg-surface font-sans text-fg shadow-2xl shadow-black/50 outline-none">
+        <Dialog.Content className="fixed left-1/2 top-[10vh] z-[3001] w-[min(92vw,42rem)] -translate-x-1/2 overflow-hidden rounded-go border border-line-strong bg-surface font-sans text-fg shadow-go-lg data-[state=open]:animate-go-in outline-none">
           <Dialog.Title className="sr-only">Command palette</Dialog.Title>
           <Dialog.Description className="sr-only">
             Search pages and interface themes
@@ -156,7 +156,7 @@ export default function CommandPalette({
               return (
                 <div key={c.id}>
                   {showGroup && (
-                    <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-fg-dim/80">
+                    <div className="text-label px-2 pb-1 pt-2">
                       {c.group}
                     </div>
                   )}

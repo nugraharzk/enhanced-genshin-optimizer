@@ -112,7 +112,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <Dialog.Root open={sheetOpen} onOpenChange={setSheetOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[3000] bg-black/60 md:hidden" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-[3001] flex w-72 flex-col border-r border-line bg-surface shadow-2xl outline-none md:hidden">
+          <Dialog.Content className="fixed inset-y-0 left-0 z-[3001] flex w-72 flex-col border-r border-line bg-surface shadow-go-lg outline-none md:hidden">
             <Dialog.Title className="sr-only">Navigation</Dialog.Title>
             <Sidebar
               onNavigate={() => setSheetOpen(false)}
