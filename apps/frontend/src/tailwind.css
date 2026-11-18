@@ -22,6 +22,10 @@
 }
 
 @source './app';
+@source '../../../libs/gi/ui/src';
+@source '../../../libs/gi/page-artifacts/src';
+@source '../../../libs/gi/page-weapons/src';
+@source '../../../libs/gi/page-characters/src';
 
 @theme inline {
   --color-bg: var(--go-bg);
