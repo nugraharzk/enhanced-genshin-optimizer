@@ -1,9 +1,7 @@
 import {
   BootstrapTooltip,
-  CardThemed,
   SolidToggleButtonGroup,
   SqBadge,
-  theme,
 } from '@genshin-optimizer/common/ui'
 import {
   bulkCatTotal,
@@ -19,27 +17,21 @@ import type { ICachedWeapon } from '@genshin-optimizer/gi/db'
 import { useDatabase } from '@genshin-optimizer/gi/db-ui'
 import { getWeaponStat } from '@genshin-optimizer/gi/stats'
 import {
+  FilterDrawer,
+  FilterSection,
   LocationFilterMultiAutocomplete,
   WeaponRarityToggle,
   WeaponToggle,
+  activeFilterCount,
+  useFilterDraft,
 } from '@genshin-optimizer/gi/ui'
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import PersonSearchIcon from '@mui/icons-material/PersonSearch'
-import ReplayIcon from '@mui/icons-material/Replay'
-import {
-  Box,
-  Button,
-  CardContent,
-  Chip,
-  Divider,
-  Grid,
-  Stack,
-  ToggleButton,
-  Typography,
-} from '@mui/material'
+import { Button, Chip, Grid, Stack, ToggleButton, Typography } from '@mui/material'
+import { SlidersHorizontal } from 'lucide-react'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
@@ -47,25 +39,43 @@ const lockedValues = ['locked', 'unlocked'] as const
 
 const lockedHandler = handleMultiSelect([...lockedValues])
 
-function WeaponFilter({
-  numShowing,
-  total,
-  weaponIds,
+/** Filter keys only — sort/edit ids must never be part of Apply. */
+type WeaponFilterKeys = {
+  weaponType: string[]
+  rarity: number[]
+  locked: string[]
+  showEquipped: boolean
+  showInventory: boolean
+  locations: string[]
+}
+
+export const WEAPON_FILTER_DEFAULTS: WeaponFilterKeys = {
+  weaponType: [...allWeaponTypeKeys],
+  rarity: [...allRarityKeys],
+  locked: [...lockedValues],
+  showEquipped: true,
+  showInventory: true,
+  locations: [],
+}
+
+/**
+ * Presentational filter body: all DB reads for totals, zero writes. The
+ * drawer owns the draft; Apply writes it once.
+ */
+export function WeaponFilterBody({
+  value,
+  onChange,
+  filteredIds,
 }: {
-  numShowing: number
-  total: number
-  weaponIds: string[]
+  value: WeaponFilterKeys
+  onChange: (patch: Partial<WeaponFilterKeys>) => void
+  filteredIds: string[]
 }) {
   const { t } = useTranslation(['page_weapon', 'ui'])
   const database = useDatabase()
-  const [state, setState] = useState(database.displayWeapon.get())
-
-  useEffect(() => {
-    database.displayWeapon.follow((_r, dbMeta) => setState(dbMeta))
-  }, [database])
 
   const { weaponType, rarity, locked, showEquipped, showInventory, locations } =
-    state
+    value
 
   const weaponTotals = useMemo(
     () =>
@@ -73,10 +83,10 @@ function WeaponFilter({
         database.weapons.entries.forEach(([id, weapon]) => {
           const wtk = getWeaponStat(weapon.key).weaponType
           ct[wtk].total++
-          if (weaponIds.includes(id)) ct[wtk].current++
+          if (filteredIds.includes(id)) ct[wtk].current++
         })
       ),
-    [database, weaponIds]
+    [database, filteredIds]
   )
 
   const weaponRarityTotals = useMemo(
@@ -85,10 +95,10 @@ function WeaponFilter({
         database.weapons.entries.forEach(([id, weapon]) => {
           const wr = getWeaponStat(weapon.key).rarity
           ct[wr].total++
-          if (weaponIds.includes(id)) ct[wr].current++
+          if (filteredIds.includes(id)) ct[wr].current++
         })
       ),
-    [database, weaponIds]
+    [database, filteredIds]
   )
 
   const { lockedTotal, equippedTotal, locationTotal } = useMemo(() => {
@@ -105,182 +115,174 @@ function WeaponFilter({
         ctMap['lockedTotal'][lock].total++
         ctMap['equippedTotal'][equipped].total++
         ctMap['locationTotal'][location].total++
-        if (weaponIds.includes(id)) {
+        if (filteredIds.includes(id)) {
           ctMap['lockedTotal'][lock].current++
           ctMap['equippedTotal'][equipped].current++
           ctMap['locationTotal'][location].current++
         }
       })
     )
-  }, [database, weaponIds])
+  }, [database, filteredIds])
 
   return (
-    <CardThemed>
-      <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Grid container>
-          <Grid>
-            <Typography variant="h6">{t('weaponFilterTitle')}</Typography>
-          </Grid>
-          <Grid
-            sx={{
-              flexGrow: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+    <div className="space-y-4">
+      <FilterSection title="Type">
+        <WeaponToggle
+          fullWidth
+          onChange={(weaponType) => onChange({ weaponType })}
+          value={weaponType}
+          totals={weaponTotals}
+          size="small"
+        />
+      </FilterSection>
+
+      <FilterSection title="Rarity">
+        <WeaponRarityToggle
+          sx={{ height: '100%' }}
+          fullWidth
+          onChange={(rarity) => onChange({ rarity })}
+          value={rarity}
+          totals={weaponRarityTotals}
+          size="small"
+        />
+      </FilterSection>
+
+      <FilterSection title="Inventory">
+        <SolidToggleButtonGroup fullWidth value={locked} size="small">
+          {lockedValues.map((v, i) => (
+            <ToggleButton
+              key={v}
+              value={v}
+              sx={{ display: 'flex', gap: 1 }}
+              onClick={() => onChange({ locked: lockedHandler(locked, v) })}
+            >
+              {i ? <LockOpenIcon /> : <LockIcon />}
+              <Trans t={t} i18nKey={`ui:${v}`} />
+              <Chip
+                label={lockedTotal[i ? 'unlocked' : 'locked']}
+                size="small"
+              />
+            </ToggleButton>
+          ))}
+        </SolidToggleButtonGroup>
+        <Button
+          startIcon={<BusinessCenterIcon />}
+          color={showInventory ? 'success' : 'secondary'}
+          onClick={() => onChange({ showInventory: !showInventory })}
+        >
+          {t('weaponInInv')}{' '}
+          <Chip
+            sx={{ ml: 1 }}
+            label={equippedTotal['unequipped']}
+            size="small"
+          />
+        </Button>
+        <Button
+          startIcon={<PersonSearchIcon />}
+          color={showEquipped ? 'success' : 'secondary'}
+          onClick={() => onChange({ showEquipped: !showEquipped })}
+        >
+          {t('equippedWeapon')}{' '}
+          <Chip sx={{ ml: 1 }} label={equippedTotal['equipped']} size="small" />
+        </Button>
+        <Suspense fallback={null}>
+          <BootstrapTooltip
+            title={showEquipped ? t('locationsTooltip') : ''}
+            placement="top"
           >
-            <Typography>
-              <strong>{numShowing}</strong> / {total}
-            </Typography>
-          </Grid>
-          <Grid>
-            <Button
-              size="small"
-              color="error"
-              onClick={() => database.displayWeapon.set({ action: 'reset' })}
-              startIcon={<ReplayIcon />}
-            >
-              <Trans t={t} i18nKey="ui:reset" />
-            </Button>
-          </Grid>
-        </Grid>
-        <Box>
-          <Grid container spacing={1}>
-            <Grid
-              size={{
-                xs: 12,
-                md: 6,
-              }}
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Trans t={t} i18nKey="subheadings.general" />
-              <Stack spacing={1}>
-                <Divider sx={{ bgcolor: theme.palette.contentNormal.light }} />
-                <WeaponToggle
-                  fullWidth
-                  onChange={(weaponType) =>
-                    database.displayWeapon.set({ weaponType })
-                  }
-                  value={weaponType}
-                  totals={weaponTotals}
-                  size="small"
-                />
-                <WeaponRarityToggle
-                  sx={{ height: '100%' }}
-                  fullWidth
-                  onChange={(rarity) => database.displayWeapon.set({ rarity })}
-                  value={rarity}
-                  totals={weaponRarityTotals}
-                  size="small"
-                />
-              </Stack>
-            </Grid>
-            <Grid
-              size={{
-                xs: 12,
-                md: 6,
-              }}
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-              }}
-            >
-              <Box>
-                <Trans t={t} i18nKey="subheadings.inventory" />
-                <Stack spacing={1}>
-                  <Divider
-                    sx={{ bgcolor: theme.palette.contentNormal.light }}
-                  />
-                  <SolidToggleButtonGroup fullWidth value={locked} size="small">
-                    {lockedValues.map((v, i) => (
-                      <ToggleButton
-                        key={v}
-                        value={v}
-                        sx={{ display: 'flex', gap: 1 }}
-                        onClick={() =>
-                          database.displayWeapon.set({
-                            locked: lockedHandler(locked, v),
-                          })
-                        }
-                      >
-                        {i ? <LockOpenIcon /> : <LockIcon />}
-                        <Trans t={t} i18nKey={`ui:${v}`} />
-                        <Chip
-                          label={lockedTotal[i ? 'unlocked' : 'locked']}
-                          size="small"
-                        />
-                      </ToggleButton>
-                    ))}
-                  </SolidToggleButtonGroup>
-                  <Button
-                    startIcon={<BusinessCenterIcon />}
-                    color={showInventory ? 'success' : 'secondary'}
-                    onClick={() =>
-                      database.displayWeapon.set({
-                        showInventory: !showInventory,
-                      })
-                    }
-                  >
-                    {t('weaponInInv')}{' '}
-                    <Chip
-                      sx={{ ml: 1 }}
-                      label={equippedTotal['unequipped']}
-                      size="small"
-                    />
-                  </Button>
-                  <Button
-                    startIcon={<PersonSearchIcon />}
-                    color={showEquipped ? 'success' : 'secondary'}
-                    onClick={() =>
-                      database.displayWeapon.set({
-                        showEquipped: !showEquipped,
-                      })
-                    }
-                  >
-                    {t('equippedWeapon')}{' '}
-                    <Chip
-                      sx={{ ml: 1 }}
-                      label={equippedTotal['equipped']}
-                      size="small"
-                    />
-                  </Button>
-                </Stack>
-                <Stack
-                  spacing={1.5}
-                  sx={{
-                    pt: 1.5,
-                  }}
-                >
-                  <Suspense fallback={null}>
-                    <BootstrapTooltip
-                      title={showEquipped ? t('locationsTooltip') : ''}
-                      placement="top"
-                    >
-                      <span>
-                        <LocationFilterMultiAutocomplete
-                          totals={locationTotal}
-                          locations={showEquipped ? [] : locations}
-                          setLocations={(locations) =>
-                            database.displayWeapon.set({ locations })
-                          }
-                          disabled={showEquipped}
-                        />
-                      </span>
-                    </BootstrapTooltip>
-                  </Suspense>
-                </Stack>
-              </Box>
-            </Grid>
-          </Grid>
-        </Box>
-      </CardContent>
-    </CardThemed>
+            <span>
+              <LocationFilterMultiAutocomplete
+                totals={locationTotal}
+                locations={showEquipped ? [] : locations}
+                setLocations={(locations) => onChange({ locations })}
+                disabled={showEquipped}
+              />
+            </span>
+          </BootstrapTooltip>
+        </Suspense>
+      </FilterSection>
+    </div>
   )
 }
+
+/**
+ * Filters live in a draft-based side drawer: controls edit a local copy and
+ * only Apply writes it to the database.
+ */
+function WeaponFilter({ weaponIds }: { weaponIds: string[] }) {
+  const { t } = useTranslation(['page_weapon', 'ui'])
+  const database = useDatabase()
+  const [state, setState] = useState(database.displayWeapon.get())
+
+  useEffect(() => {
+    database.displayWeapon.follow((_r, dbMeta) => setState(dbMeta))
+  }, [database])
+
+  const committed = useMemo(
+    () => ({
+      weaponType: state.weaponType,
+      rarity: state.rarity,
+      locked: state.locked,
+      showEquipped: state.showEquipped,
+      showInventory: state.showInventory,
+      locations: state.locations,
+    }),
+    [state]
+  )
+
+  const [open, setOpen] = useState(false)
+  const { draft, seed, update, reset } = useFilterDraft(
+    committed,
+    WEAPON_FILTER_DEFAULTS
+  )
+
+  const openDrawer = () => {
+    seed()
+    setOpen(true)
+  }
+
+  const apply = () => {
+    // filter keys only: sortType/ascending/editWeaponId stay untouched
+    database.displayWeapon.set({ ...draft })
+    setOpen(false)
+  }
+
+  return (
+    <>
+      <Button onClick={openDrawer} startIcon={<SlidersHorizontal size={16} />}>
+        <Trans t={t} i18nKey="weaponFilterTitle">
+          Weapon Filter
+        </Trans>
+        <SqBadge
+          sx={{ ml: 1 }}
+          color={
+            activeFilterCount(WEAPON_FILTER_DEFAULTS, committed)
+              ? 'success'
+              : 'secondary'
+          }
+        >
+          {activeFilterCount(WEAPON_FILTER_DEFAULTS, committed)}
+        </SqBadge>
+      </Button>
+      <FilterDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onApply={apply}
+        onReset={reset}
+        activeCount={activeFilterCount(WEAPON_FILTER_DEFAULTS, draft)}
+        title={t('weaponFilterTitle', 'Weapon Filters')}
+      >
+        <WeaponFilterBody
+          value={draft as WeaponFilterKeys}
+          onChange={update}
+          filteredIds={weaponIds}
+        />
+      </FilterDrawer>
+    </>
+  )
+}
+
+export default WeaponFilter
 
 function WeaponRedButtons({ weaponIds }: { weaponIds: string[] }) {
   const { t } = useTranslation(['page_weapon', 'ui'])
@@ -413,5 +415,4 @@ function WeaponRedButtons({ weaponIds }: { weaponIds: string[] }) {
   )
 }
 
-export default WeaponFilter
 export { WeaponRedButtons }

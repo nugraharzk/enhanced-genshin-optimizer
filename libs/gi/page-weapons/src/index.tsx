@@ -206,11 +206,6 @@ export default function PageWeapon() {
         />
       </Suspense>
 
-      <WeaponFilter
-        numShowing={weaponIds.length}
-        total={totalWeaponNum}
-        weaponIds={weaponIds}
-      />
       <CardThemed>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Box
@@ -219,6 +214,7 @@ export default function PageWeapon() {
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
+              gap: 1,
             }}
           >
             <TextField
@@ -234,10 +230,13 @@ export default function PageWeapon() {
                 input: { sx: { height: '100%' } },
               }}
             />
-            <ShowingAndSortOptionSelect
-              showingTextProps={showingTextProps}
-              sortByButtonProps={sortByButtonProps}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ShowingAndSortOptionSelect
+                showingTextProps={showingTextProps}
+                sortByButtonProps={sortByButtonProps}
+              />
+              <WeaponFilter weaponIds={weaponIds} />
+            </Box>
           </Box>
           <WeaponRedButtons weaponIds={weaponIds} />
         </CardContent>
