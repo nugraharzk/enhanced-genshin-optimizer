@@ -2,6 +2,7 @@ import { useDataManagerValues } from '@genshin-optimizer/common/database-ui'
 import { CardThemed, ModalWrapper } from '@genshin-optimizer/common/ui'
 import { useDatabase } from '@genshin-optimizer/gi/db-ui'
 import { ArtifactCard } from '@genshin-optimizer/gi/ui'
+import { findDuplicateGroups } from '@genshin-optimizer/gi/util'
 import CloseIcon from '@mui/icons-material/Close'
 import DifferenceIcon from '@mui/icons-material/Difference'
 import {
@@ -66,26 +67,13 @@ function DupContent({
   const database = useDatabase()
   const artValuesDirty = useDataManagerValues(database.arts)
   const dupList = useMemo(() => {
-    const dups = [] as Array<Array<string>>
-    let artKeys = artValuesDirty && [...database.arts.keys]
-
-    while (artKeys.length !== 0) {
-      const artKey = artKeys.shift()
-      if (!artKey) continue
-      const art = database.arts.get(artKey)
-      if (!art) continue
-      const { duplicated } = database.arts.findDups(art, artKeys)
-      if (!duplicated.length) continue
-      const dupKeys = duplicated.map((a) => a.id)
-
-      dups.push(
-        [artKey, ...dupKeys]
-          // sort the keys so equipped artifacts show up 1st.
-          .sort((a) => ((database.arts.get(a)?.location ?? '') ? -1 : 1))
-      )
-      artKeys = artKeys.filter((id) => !dupKeys.includes(id))
-    }
-    return dups
+    if (!artValuesDirty) return []
+    return findDuplicateGroups(database.arts.values, (art, ids) =>
+      database.arts.findDups(art, ids)
+    ).map((group) =>
+      // sort the keys so equipped artifacts show up 1st.
+      group.sort((a) => ((database.arts.get(a)?.location ?? '') ? -1 : 1))
+    )
   }, [database.arts, artValuesDirty])
   return (
     <Stack spacing={2}>

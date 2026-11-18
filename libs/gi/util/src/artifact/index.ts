@@ -1,5 +1,6 @@
 export * from './artifact'
 export * from './artifactMeta'
+export * from './dupGroups'
 export * from './artifactSortUtil'
 export * from './randomizeArtifact'
 export * from './rollProbabilityUtil'

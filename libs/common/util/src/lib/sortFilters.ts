@@ -7,12 +7,28 @@ export function sortFunction<Keys extends string, T>(
   configs: SortConfigs<Keys, T>,
   ascendingBypass: Keys[] = []
 ) {
+  // A comparator runs O(n log n) times, and a sort config can be expensive
+  // (artifact efficiency walks every substat). Derive each item's value once
+  // per sort instead of twice per comparison.
+  const memo = new Map<Keys, Map<T, number | string>>()
+  const valueOf = (sortby: Keys, item: T): number | string => {
+    let byItem = memo.get(sortby)
+    if (!byItem) {
+      byItem = new Map()
+      memo.set(sortby, byItem)
+    }
+    let value = byItem.get(item)
+    if (value === undefined) {
+      value = configs[sortby](item)
+      byItem.set(item, value)
+    }
+    return value
+  }
   return (a: T, b: T): number => {
     for (const sortby of sortbyKeys) {
       let diff = 0
-      const config = configs[sortby]
-      const aV = config(a)
-      const bV = config(b)
+      const aV = valueOf(sortby, a)
+      const bV = valueOf(sortby, b)
       if (typeof aV === 'string' && typeof bV === 'string')
         diff = aV.localeCompare(bV)
       else diff = (bV as number) - (aV as number)
