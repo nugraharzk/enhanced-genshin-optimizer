@@ -7,6 +7,7 @@ import { useMediaQueryUp } from '@genshin-optimizer/common/react-util'
 import {
   CardThemed,
   ShowingAndSortOptionSelect,
+  SqBadge,
   useInfScroll,
 } from '@genshin-optimizer/common/ui'
 import {
@@ -33,12 +34,16 @@ import {
   CharacterEditor,
   CharacterRarityToggle,
   CharacterSingleSelectionModal,
+  FilterDrawer,
+  FilterSection,
+  activeFilterCount,
   characterFilterConfigs,
   characterSortConfigs,
   characterSortMap,
   ElementToggle,
   SillyContext,
   useCharSelectionCallback,
+  useFilterDraft,
   WeaponToggle,
 } from '@genshin-optimizer/gi/ui'
 import AddIcon from '@mui/icons-material/Add'
@@ -50,6 +55,7 @@ import {
   Skeleton,
   TextField,
 } from '@mui/material'
+import { SlidersHorizontal } from 'lucide-react'
 import type { ChangeEvent } from 'react'
 import {
   Suspense,
@@ -58,7 +64,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { useMatch, useNavigate } from 'react-router-dom'
 
 const columns = { xs: 1, sm: 2, md: 3, lg: 4, xl: 4 }
@@ -100,6 +106,30 @@ export default function PageCharacter() {
   const brPt = useMediaQueryUp()
 
   const [newCharacter, setnewCharacter] = useState(false)
+
+  const [filterOpen, setFilterOpen] = useState(false)
+  const committedFilter = useMemo(
+    () => ({
+      weaponType: displayCharacter.weaponType as string[],
+      element: displayCharacter.element as string[],
+      rarity: displayCharacter.rarity as number[],
+    }),
+    [displayCharacter]
+  )
+  const filterDefaults = useMemo(
+    () => ({
+      weaponType: [...allWeaponTypeKeys] as string[],
+      element: [...allElementKeys] as string[],
+      rarity: [...allCharacterRarityKeys] as number[],
+    }),
+    []
+  )
+  const {
+    draft: filterDraft,
+    seed: seedFilter,
+    update: updateFilter,
+    reset: resetFilter,
+  } = useFilterDraft(committedFilter, filterDefaults)
 
   // character favorite updater
   const characterMetaDirty = useDataManagerValues(database.charMeta)
@@ -234,74 +264,95 @@ export default function PageCharacter() {
       </Suspense>
       <CardThemed>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Grid container spacing={1}>
-            <Grid>
-              <WeaponToggle
-                sx={{ height: '100%' }}
-                onChange={(weaponType) =>
-                  database.displayCharacter.set({ weaponType })
-                }
-                value={weaponType}
-                totals={weaponTotals}
-                size="small"
-              />
-            </Grid>
-            <Grid>
-              <ElementToggle
-                sx={{ height: '100%' }}
-                onChange={(element) =>
-                  database.displayCharacter.set({ element })
-                }
-                value={element}
-                totals={elementTotals}
-                size="small"
-              />
-            </Grid>
-            <Grid>
-              <CharacterRarityToggle
-                sx={{ height: '100%' }}
-                onChange={(rarity) => database.displayCharacter.set({ rarity })}
-                value={rarity}
-                totals={rarityTotals}
-                size="small"
-              />
-            </Grid>
-            <Grid
-              sx={{
-                flexGrow: 1,
-              }}
-            />
-            <Grid>
-              <TextField
-                autoFocus
-                value={searchTerm}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                  setSearchTerm(e.target.value)
-                }
-                label={t('characterName')}
-                size="small"
-                sx={{ height: '100%' }}
-                slotProps={{
-                  input: {
-                    sx: { height: '100%' },
-                  },
-                }}
-              />
-            </Grid>
-          </Grid>
           <Box
             sx={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
+              gap: 1,
             }}
           >
             <ShowingAndSortOptionSelect
               showingTextProps={showingTextProps}
               sortByButtonProps={sortByButtonProps}
             />
+            <Button
+              onClick={() => {
+                seedFilter()
+                setFilterOpen(true)
+              }}
+              startIcon={<SlidersHorizontal size={16} />}
+            >
+              <Trans t={t} i18nKey="ui:filters">
+                Filters
+              </Trans>
+              <SqBadge
+                sx={{ ml: 1 }}
+                color={
+                  activeFilterCount(filterDefaults, committedFilter)
+                    ? 'success'
+                    : 'secondary'
+                }
+              >
+                {activeFilterCount(filterDefaults, committedFilter)}
+              </SqBadge>
+            </Button>
           </Box>
+          <FilterDrawer
+            open={filterOpen}
+            onClose={() => setFilterOpen(false)}
+            onApply={() => {
+              database.displayCharacter.set({
+                weaponType: filterDraft.weaponType,
+                element: filterDraft.element,
+                rarity: filterDraft.rarity,
+              })
+              setFilterOpen(false)
+            }}
+            onReset={resetFilter}
+            activeCount={activeFilterCount(filterDefaults, filterDraft)}
+            title={t('ui:filters', 'Filters')}
+          >
+            <FilterSection title="Type">
+              <WeaponToggle
+                onChange={(weaponType) => updateFilter({ weaponType })}
+                value={filterDraft.weaponType}
+                totals={weaponTotals}
+                size="small"
+                fullWidth
+              />
+            </FilterSection>
+            <FilterSection title="Element">
+              <ElementToggle
+                onChange={(element) => updateFilter({ element })}
+                value={filterDraft.element}
+                totals={elementTotals}
+                size="small"
+                fullWidth
+              />
+            </FilterSection>
+            <FilterSection title="Rarity">
+              <CharacterRarityToggle
+                onChange={(rarity) => updateFilter({ rarity })}
+                value={filterDraft.rarity}
+                totals={rarityTotals}
+                size="small"
+                fullWidth
+              />
+            </FilterSection>
+            <FilterSection title="Search">
+              <TextField
+                value={searchTerm}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                  setSearchTerm(e.target.value)
+                }
+                label={t('characterName')}
+                size="small"
+                fullWidth
+              />
+            </FilterSection>
+          </FilterDrawer>
         </CardContent>
       </CardThemed>
       <Button
