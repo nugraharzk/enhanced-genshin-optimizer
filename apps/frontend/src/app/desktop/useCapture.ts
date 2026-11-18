@@ -25,6 +25,14 @@ export function useCapture() {
     () => localStorage.getItem('nb_autocapture') !== '0'
   )
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const setAuto = useCallback((v: boolean) => {
     localStorage.setItem('nb_autocapture', v ? '1' : '0')
@@ -43,15 +51,23 @@ export function useCapture() {
     const inv = getInvoke()
     if (!inv || timer.current !== null) return
     const alive = await inv('capture_running')
+    if (!mountedRef.current) return
     if (!alive) await inv('launch_capture')
+    if (!mountedRef.current) return
     timer.current = setInterval(async () => {
       const inv = getInvoke()
       if (!inv) return
-      const good = (await inv('take_capture')) as string | null
-      if (good) for (const cb of capturedCbs) cb(good)
+      try {
+        const good = (await inv('take_capture')) as string | null
+        if (good) for (const cb of capturedCbs) cb(good)
+      } catch {
+        // Worker died mid-session — stop the poll instead of throwing
+        // unhandled rejections every tick while the UI says "running".
+        stopWatching()
+      }
     }, 5000)
     setRunning(true)
-  }, [])
+  }, [stopWatching])
 
   // On unmount, stop the poll only (the worker keeps running by design —
   // stopWatching() is the explicit user action for that).

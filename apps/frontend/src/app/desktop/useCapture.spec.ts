@@ -103,6 +103,54 @@ describe('useCapture', () => {
       invoke.mock.calls.filter((c) => c[0] === 'take_capture').length
     ).toBe(1)
   })
+
+  it('stops the poll and flips running when take_capture rejects', async () => {
+    vi.useFakeTimers()
+    const onUnhandled = vi.fn()
+    process.on('unhandledRejection', onUnhandled)
+    let fail = false
+    const invoke = vi.fn(async (cmd: string) => {
+      if (cmd === 'capture_running') return true
+      if (cmd === 'take_capture') {
+        if (fail) throw new Error('worker died')
+        return null
+      }
+      return null
+    })
+    mockTauri(invoke)
+    const { result } = renderHook(() => useCapture())
+    await act(() => result.current.arm())
+    expect(result.current.running).toBe(true)
+
+    fail = true
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+    // poll stopped, running flipped false
+    expect(result.current.running).toBe(false)
+    const ticks = invoke.mock.calls.filter((c) => c[0] === 'take_capture')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000)
+    })
+    expect(
+      invoke.mock.calls.filter((c) => c[0] === 'take_capture').length
+    ).toBe(ticks.length)
+    // no unhandled rejection escaped from the interval callback
+    expect(onUnhandled).not.toHaveBeenCalled()
+    process.off('unhandledRejection', onUnhandled)
+  })
+
+  it('arm() does not start the poll after unmount', async () => {
+    const invoke = vi.fn(async (cmd: string) =>
+      cmd === 'capture_running' ? false : null
+    )
+    mockTauri(invoke)
+    const { result, unmount } = renderHook(() => useCapture())
+    const arming = act(() => result.current.arm())
+    unmount()
+    await arming
+    expect(invoke).not.toHaveBeenCalledWith('launch_capture')
+  })
 })
 
 describe('useAutoBackup', () => {
