@@ -5,11 +5,29 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router-dom'
+import { getInvoke } from './tauri'
+import { useAutoBackup } from './desktop/useCapture'
+import { Toaster } from './desktop/toast'
 import CommandPalette from './CommandPalette'
 import Footer from './Footer'
 import go_icon from './go_icon.png'
 import Sidebar from './Sidebar'
-import { Toaster } from './desktop/toast'
+
+/**
+ * Desktop-only daily auto-backup, mounted exactly once app-wide. The injected
+ * script in the desktop repo still performs its own daily auto-backup; this is
+ * the SPA path toward owning it (both sides stamp __lastAutoBackup, first
+ * writer wins).
+ */
+function AutoBackup() {
+  if (!getInvoke()) return null
+  return <AutoBackupOnce />
+}
+
+function AutoBackupOnce() {
+  useAutoBackup()
+  return null
+}
 
 /**
  * Web layout: persistent sidebar on desktop, top bar + sheet on mobile, and a
@@ -114,6 +132,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </Dialog.Root>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <AutoBackup />
       <Toaster />
     </div>
   )

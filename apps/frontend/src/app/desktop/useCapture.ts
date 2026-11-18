@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { getInvoke } from '../tauri'
 
 // Subscribers for each GOOD dump the capture poll produces. Module-level so
@@ -12,49 +12,71 @@ export function onCaptured(cb: (good: string) => void): () => void {
   }
 }
 
-/**
- * Drives the elevated capture worker: arms it (launching via UAC if not
- * alive), then polls `take_capture` every 5 s, handing GOOD dumps to
- * `onCaptured` subscribers. `auto` is the user toggle persisted for the
- * injected script's convention (`nb_autocapture`, absent/anything ≠ '0' = on).
- */
-export function useCapture() {
-  const invoke = getInvoke()
-  const [running, setRunning] = useState(false)
-  const [auto, setAutoState] = useState(
-    () => localStorage.getItem('nb_autocapture') !== '0'
-  )
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null)
-  const mountedRef = useRef(true)
+// ---------------------------------------------------------------------------
+// Module-level singleton poller state.
+//
+// useCapture() is mounted in more than one place (DesktopPanel and Home's
+// CaptureCard). Keeping the timer per-component let two 5 s `take_capture`
+// pollers race, and let an unmount (navigating off Home) kill the only poll.
+// So the timer, `running` and `auto` live here at module scope: exactly one
+// poller app-wide, and component unmounts never touch it. Only an explicit
+// stop (user "Stop waiting", or a rejected poll tick) ends the poll.
+// ---------------------------------------------------------------------------
 
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
+interface CaptureStore {
+  running: boolean
+  auto: boolean
+}
+
+// Lazy init: reading localStorage at import time would break environments
+// (tests) that install a localStorage shim after module evaluation.
+let store: CaptureStore | null = null
+const listeners = new Set<() => void>()
+let timer: ReturnType<typeof setInterval> | null = null
+
+function ensureStore(): CaptureStore {
+  if (!store)
+    store = {
+      running: false,
+      auto: localStorage.getItem('nb_autocapture') !== '0',
     }
-  }, [])
+  return store
+}
 
-  const setAuto = useCallback((v: boolean) => {
-    localStorage.setItem('nb_autocapture', v ? '1' : '0')
-    setAutoState(v)
-  }, [])
+function emit() {
+  for (const l of listeners) l()
+}
 
-  const stopWatching = useCallback(() => {
-    if (timer.current !== null) {
-      clearInterval(timer.current)
-      timer.current = null
-      setRunning(false)
-    }
-  }, [])
+export function subscribeCapture(cb: () => void): () => void {
+  listeners.add(cb)
+  return () => {
+    listeners.delete(cb)
+  }
+}
 
-  const arm = useCallback(async () => {
-    const inv = getInvoke()
-    if (!inv || timer.current !== null) return
+function getCaptureStore(): CaptureStore {
+  return ensureStore()
+}
+
+function stopWatching() {
+  if (timer === null) return
+  clearInterval(timer)
+  timer = null
+  store = { ...ensureStore(), running: false }
+  emit()
+}
+
+let arming = false
+
+async function arm() {
+  const inv = getInvoke()
+  if (!inv || timer !== null || arming) return
+  arming = true
+  try {
     const alive = await inv('capture_running')
-    if (!mountedRef.current) return
+    if (timer !== null) return // another arm won the race
     if (!alive) await inv('launch_capture')
-    if (!mountedRef.current) return
-    timer.current = setInterval(async () => {
+    timer = setInterval(async () => {
       const inv = getInvoke()
       if (!inv) return
       try {
@@ -66,21 +88,37 @@ export function useCapture() {
         stopWatching()
       }
     }, 5000)
-    setRunning(true)
-  }, [stopWatching])
+    store = { ...ensureStore(), running: true }
+    emit()
+  } finally {
+    arming = false
+  }
+}
 
-  // On unmount, stop the poll only (the worker keeps running by design —
-  // stopWatching() is the explicit user action for that).
-  useEffect(() => {
-    return () => {
-      if (timer.current !== null) {
-        clearInterval(timer.current)
-        timer.current = null
-      }
-    }
+/**
+ * Drives the elevated capture worker: arms it (launching via UAC if not
+ * alive), then polls `take_capture` every 5 s, handing GOOD dumps to
+ * `onCaptured` subscribers. `auto` is the user toggle persisted for the
+ * injected script's convention (`nb_autocapture`, absent/anything ≠ '0' = on).
+ *
+ * All state is a module-level singleton (see above), so every caller of this
+ * hook shares one poller and one view of it.
+ */
+export function useCapture() {
+  const snap = useSyncExternalStore(subscribeCapture, getCaptureStore)
+
+  const setAuto = useCallback((v: boolean) => {
+    localStorage.setItem('nb_autocapture', v ? '1' : '0')
+    store = { ...ensureStore(), auto: v }
+    emit()
   }, [])
 
-  return { running, auto, setAuto, arm, stopWatching }
+  return { running: snap.running, auto: snap.auto, setAuto, arm, stopWatching }
+}
+
+/** Test/teardown: the explicit stop, same action as the UI's "Stop waiting". */
+export function stopCapturePoll() {
+  stopWatching()
 }
 
 // All localStorage keys → one object; the backup is a full-state snapshot.

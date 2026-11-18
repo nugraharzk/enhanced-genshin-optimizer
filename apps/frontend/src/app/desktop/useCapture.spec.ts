@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useAutoBackup, useCapture } from './useCapture'
+import { stopCapturePoll, useAutoBackup, useCapture, onCaptured } from './useCapture'
 
 type Invoke = (cmd: string, args?: Record<string, unknown>) => Promise<unknown>
 
@@ -34,6 +34,11 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  // The poller is a module-level singleton; make sure no test leaks a live
+  // timer into the next one.
+  act(() => {
+    stopCapturePoll()
+  })
   vi.useRealTimers()
   delete (window as any).__TAURI__
 })
@@ -95,7 +100,7 @@ describe('useCapture', () => {
     expect(invoke).toHaveBeenCalledWith('take_capture')
     const calls = invoke.mock.calls.filter((c) => c[0] === 'take_capture')
     expect(calls.length).toBe(1)
-    result.current.stopWatching()
+    act(() => result.current.stopWatching())
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10000)
     })
@@ -140,16 +145,94 @@ describe('useCapture', () => {
     process.off('unhandledRejection', onUnhandled)
   })
 
-  it('arm() does not start the poll after unmount', async () => {
-    const invoke = vi.fn(async (cmd: string) =>
-      cmd === 'capture_running' ? false : null
-    )
+  it('two useCapture() callers share one singleton poller', async () => {
+    vi.useFakeTimers()
+    const captured: string[] = []
+    const subs = [onCaptured((g) => captured.push('a:' + g)), onCaptured((g) => captured.push('b:' + g))]
+    let running = false
+    const invoke = vi.fn(async (cmd: string) => {
+      if (cmd === 'capture_running') return running
+      if (cmd === 'launch_capture') {
+        running = true
+        return null
+      }
+      if (cmd === 'take_capture') return running ? '{"GOOD":[1]}' : null
+      return null
+    })
+    mockTauri(invoke)
+
+    const a = renderHook(() => useCapture())
+    const b = renderHook(() => useCapture())
+
+    // arm in one → running true in the other
+    await act(() => a.result.current.arm())
+    expect(a.result.current.running).toBe(true)
+    expect(b.result.current.running).toBe(true)
+
+    // arm again in the other: still exactly one launch, one poller
+    await act(() => b.result.current.arm())
+    expect(
+      invoke.mock.calls.filter((c) => c[0] === 'launch_capture').length
+    ).toBe(1)
+
+    // one tick → exactly one take_capture, both subscribers see the dump
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+    expect(invoke.mock.calls.filter((c) => c[0] === 'take_capture').length).toBe(1)
+    expect(captured).toEqual(['a:{"GOOD":[1]}', 'b:{"GOOD":[1]}'])
+
+    // stop in one → running false in the other too
+    act(() => a.result.current.stopWatching())
+    expect(b.result.current.running).toBe(false)
+    for (const unsub of subs) unsub()
+  })
+
+  it('unmount does not stop the singleton poll', async () => {
+    vi.useFakeTimers()
+    const invoke = vi.fn(async (cmd: string) => {
+      if (cmd === 'capture_running') return true
+      if (cmd === 'take_capture') return '{"GOOD":[]}'
+      return null
+    })
+    mockTauri(invoke)
+    const { result, unmount } = renderHook(() => useCapture())
+    await act(() => result.current.arm())
+    expect(result.current.running).toBe(true)
+    unmount()
+
+    // A fresh mount (e.g. navigating back to Home) still sees the poll running.
+    const again = renderHook(() => useCapture())
+    expect(again.result.current.running).toBe(true)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000)
+    })
+    expect(
+      invoke.mock.calls.filter((c) => c[0] === 'take_capture').length
+    ).toBe(2)
+    again.unmount()
+  })
+
+  it('arm() completing after unmount still starts the poll (singleton outlives components)', async () => {
+    vi.useFakeTimers()
+    const invoke = vi.fn(async (cmd: string) => {
+      if (cmd === 'capture_running') return false
+      if (cmd === 'launch_capture') return null
+      if (cmd === 'take_capture') return '{"GOOD":[]}'
+      return null
+    })
     mockTauri(invoke)
     const { result, unmount } = renderHook(() => useCapture())
     const arming = act(() => result.current.arm())
     unmount()
     await arming
-    expect(invoke).not.toHaveBeenCalledWith('launch_capture')
+    // The module-level poller is armed regardless of the component's fate.
+    expect(invoke).toHaveBeenCalledWith('launch_capture')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+    expect(invoke).toHaveBeenCalledWith('take_capture')
   })
 })
 

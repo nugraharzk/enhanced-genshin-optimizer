@@ -31,8 +31,7 @@ function Panel({
 }) {
   const { running, auto, setAuto, arm, stopWatching } = useCapture()
   const [backups, setBackups] = useState<string[]>([])
-  // Backups are refreshed whenever the menu opens — cheap enough and always
-  // current, no subscription into the worker needed.
+  // Backups are fetched once on mount; the menu re-renders from this state.
   const refresh = () => {
     invoke('list_backups')
       .then((names) => setBackups((names as string[]).slice(-8).reverse()))
