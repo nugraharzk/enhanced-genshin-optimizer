@@ -294,6 +294,19 @@ export function applyThemeVars(t: ThemeDef) {
     '--go-accent-hover': t.accentHover,
     '--go-accent-text': t.accentText,
     '--go-radius': `${t.radius}px`,
+    // elevation: dark themes shade with black, light ones with slate ink —
+    // pure-black shadows look dirty on light surfaces
+    ...(t.mode === 'dark'
+      ? {
+          '--go-shadow-sm': '0 1px 2px rgba(0,0,0,.4)',
+          '--go-shadow-md': '0 8px 24px rgba(0,0,0,.45)',
+          '--go-shadow-lg': '0 18px 40px rgba(0,0,0,.5)',
+        }
+      : {
+          '--go-shadow-sm': '0 1px 2px rgba(15,23,42,.08)',
+          '--go-shadow-md': '0 8px 24px rgba(15,23,42,.10)',
+          '--go-shadow-lg': '0 18px 40px rgba(15,23,42,.14)',
+        }),
   }
   for (const [k, v] of Object.entries(vars)) r.style.setProperty(k, v)
 }

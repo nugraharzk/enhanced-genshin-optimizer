@@ -379,16 +379,32 @@ function themeFor(t: ThemeDef) {
     }),
   },
     components: {
-      MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+      MuiPaper: {
+        styleOverrides: {
+          root: { backgroundImage: 'none', boxShadow: 'var(--go-shadow-sm)' },
+        },
+      },
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
           root: { textTransform: 'none', fontWeight: 600 },
         },
       },
-      MuiCard: { styleOverrides: { root: { borderRadius: t.radius } } },
-      MuiDialog: { styleOverrides: { paper: { borderRadius: t.radius } } },
-      MuiMenu: { styleOverrides: { paper: { borderRadius: t.radius } } },
+      MuiCard: {
+        styleOverrides: {
+          root: { borderRadius: t.radius, boxShadow: 'var(--go-shadow-sm)' },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: { borderRadius: t.radius, boxShadow: 'var(--go-shadow-md)' },
+        },
+      },
+      MuiMenu: {
+        styleOverrides: {
+          paper: { borderRadius: t.radius, boxShadow: 'var(--go-shadow-md)' },
+        },
+      },
       MuiChip: {
         styleOverrides: {
           root: { borderRadius: Math.max(6, t.radius - 4), fontWeight: 600 },

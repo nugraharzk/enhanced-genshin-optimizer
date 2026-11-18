@@ -10,6 +10,17 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+/* Self-hosted Inter variable font. The stacks always named Inter, but no
+   font file shipped — everything silently fell back to Roboto/system. The
+   desktop CSP allows font-src 'self' data:, so this must stay same-origin. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable.woff2') format('woff2-variations');
+}
+
 @source './app';
 
 @theme inline {
@@ -24,6 +35,9 @@
   --color-accent-hover: var(--go-accent-hover);
   --color-accent-fg: var(--go-accent-text);
   --radius-go: var(--go-radius);
+  --shadow-go-sm: var(--go-shadow-sm);
+  --shadow-go-md: var(--go-shadow-md);
+  --shadow-go-lg: var(--go-shadow-lg);
   --font-sans: Inter, Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -88,4 +102,46 @@ html body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--go-accent);
   background-clip: content-box;
+}
+
+/* ---- Motion: one entrance for every Radix popover/menu/toast. ------------- */
+/* 4px rise + fade, 140ms ease-out. Fully disabled for reduced motion. */
+@keyframes go-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@layer utilities {
+  .animate-go-in {
+    animation: go-in 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-go-in {
+    animation: none;
+  }
+}
+
+/* ---- Typography conventions. ---------------------------------------------- */
+@layer utilities {
+  /* Page and card titles: the one heading scale for the new surfaces. */
+  .text-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--go-text);
+  }
+  /* Uppercase micro-labels (sidebar groups, stat captions). */
+  .text-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--go-text-dim);
+  }
 }
