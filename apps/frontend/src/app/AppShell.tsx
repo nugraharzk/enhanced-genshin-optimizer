@@ -9,6 +9,7 @@ import CommandPalette from './CommandPalette'
 import Footer from './Footer'
 import go_icon from './go_icon.png'
 import Sidebar from './Sidebar'
+import { Toaster } from './desktop/toast'
 
 /**
  * Web layout: persistent sidebar on desktop, top bar + sheet on mobile, and a
@@ -113,6 +114,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </Dialog.Root>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <Toaster />
     </div>
   )
 }

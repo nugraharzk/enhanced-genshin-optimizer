@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 import go_icon from './go_icon.png'
 import { NAV_GROUPS, useNavCounts } from './nav'
+import DesktopPanel from './desktop/DesktopPanel'
 import SharedBadge from './SharedBadge'
 import ThemeSwitcher from './ThemeSwitcher'
 
@@ -106,6 +107,7 @@ export default function Sidebar({
       </nav>
 
       <div className="mt-1 border-t border-line pt-2">
+        <DesktopPanel />
         <SharedBadge />
         <ThemeSwitcher wide />
       </div>
