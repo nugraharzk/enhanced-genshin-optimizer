@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "../../../dist/out-tsc",
     "declaration": true,
-    "types": ["vitest/globals", "node", "object-overrides"]
+    "types": ["vitest/globals", "node", "object-overrides", "vite/client"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["vite.config.mts", "src/**/*.spec.ts", "src/**/*.test.ts"]
