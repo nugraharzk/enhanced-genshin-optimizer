@@ -33,6 +33,8 @@ import {
   useDBMeta,
 } from '@genshin-optimizer/gi/db-ui'
 import { SlotIcon, StatIcon } from '@genshin-optimizer/gi/svgicons'
+import type { TriageResult } from '@genshin-optimizer/gi/triage'
+import { triageLabel } from '@genshin-optimizer/gi/triage'
 import {
   artDisplayValue,
   getArtifactEfficiency,
@@ -116,8 +118,10 @@ export function ArtifactCardObj({
   hideSubstatValues = false,
   hideLocation = false,
   buildsBadgeLabel,
+  triage,
 }: {
   artifact: ICachedArtifact
+  triage?: TriageResult
 } & Data) {
   const { t } = useTranslation(['artifact', 'ui'])
   const { t: tk } = useTranslation('statKey_gen')
@@ -268,6 +272,19 @@ export function ArtifactCardObj({
                   label={<strong>{` +${level}`}</strong>}
                   color={artifactLevelVariant(level)}
                 />
+                {triage && (
+                  <Chip
+                    size="small"
+                    label={triageLabel(triage)}
+                    color={
+                      triage.verdict === 'keep'
+                        ? 'success'
+                        : triage.verdict === 'maybe'
+                          ? 'warning'
+                          : 'default'
+                    }
+                  />
+                )}
                 {!slotName && <Skeleton variant="text" width={100} />}
                 {slotName && (
                   <Typography
