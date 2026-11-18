@@ -74,6 +74,8 @@ html body {
   a {
     color: inherit;
     font-family: inherit;
+    /* No preflight here, so the UA underline leaks into every shell link. */
+    text-decoration: none;
   }
   ::selection {
     background: color-mix(in srgb, var(--go-accent) 35%, transparent);

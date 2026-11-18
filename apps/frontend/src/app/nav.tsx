@@ -1,10 +1,10 @@
 import { useDataManagerKeys } from '@genshin-optimizer/common/database-ui'
-import { AnvilIcon } from '@genshin-optimizer/common/svgicons'
 import { useDatabase } from '@genshin-optimizer/gi/db-ui'
-import { FlowerIcon } from '@genshin-optimizer/gi/svgicons'
 import {
+  Anvil,
   Archive,
   BookOpen,
+  Flower,
   ScanLine,
   Settings,
   Users,
@@ -34,14 +34,14 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
         key: 'artifacts',
         to: '/artifacts',
         i18Key: 'tabs.artifacts',
-        icon: FlowerIcon,
+        icon: Flower,
         count: 'arts',
       },
       {
         key: 'weapons',
         to: '/weapons',
         i18Key: 'tabs.weapons',
-        icon: AnvilIcon,
+        icon: Anvil,
         count: 'weapons',
       },
       {
