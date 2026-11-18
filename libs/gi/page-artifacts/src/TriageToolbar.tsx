@@ -83,6 +83,11 @@ export function TriageToolbar({
             weighing {progress.done}/{progress.total} characters
           </Typography>
         )}
+        {status === 'error' && (
+          <Typography variant="caption" color="error">
+            Triage failed — see the console for details.
+          </Typography>
+        )}
         <Box sx={{ flexGrow: 1 }} />
         <Button size="small" onClick={onRecompute} disabled={status === 'running'}>
           Recompute

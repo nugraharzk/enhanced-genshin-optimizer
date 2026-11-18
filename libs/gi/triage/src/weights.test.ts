@@ -1,7 +1,7 @@
 import { createTestDBStorage } from '@genshin-optimizer/common/database'
 import { ArtCharDatabase } from '@genshin-optimizer/gi/db'
 import { statBump } from './reference'
-import { computeStatWeights } from './weights'
+import { computeRosterWeights, computeStatWeights } from './weights'
 
 function makeDatabase() {
   const database = new ArtCharDatabase(1, createTestDBStorage('go'))
@@ -44,5 +44,18 @@ describe('computeStatWeights', () => {
   it('scores an off-element DMG goblet at zero', () => {
     const w = computeStatWeights(database, 'Albedo')! // geo
     expect(w.pyro_dmg_).toEqual(0)
+  })
+
+  it('skips a character whose weights fail instead of failing the roster', async () => {
+    const byChar = await computeRosterWeights(
+      database,
+      ['Albedo', 'Noelle'],
+      undefined,
+      (_db, key) => {
+        if (key === 'Albedo') throw new Error('boom')
+        return { atk_: 1 }
+      }
+    )
+    expect(byChar).toEqual({ Noelle: { atk_: 1 } })
   })
 })

@@ -3,7 +3,7 @@ import { computeTriage } from '@genshin-optimizer/gi/triage'
 import type { ArtCharDatabase } from '@genshin-optimizer/gi/db'
 import { useCallback, useState } from 'react'
 
-export type TriageStatus = 'idle' | 'running' | 'done'
+export type TriageStatus = 'idle' | 'running' | 'done' | 'error'
 
 /**
  * Runs triage on demand and keeps the result for the session. Nothing here is
@@ -17,11 +17,16 @@ export function useTriage(database: ArtCharDatabase) {
   const start = useCallback(async () => {
     setStatus('running')
     setProgress({ done: 0, total: database.chars.values.length })
-    const map = await computeTriage(database, (done, total) =>
-      setProgress({ done, total })
-    )
-    setResults(map)
-    setStatus('done')
+    try {
+      const map = await computeTriage(database, (done, total) =>
+        setProgress({ done, total })
+      )
+      setResults(map)
+      setStatus('done')
+    } catch (error) {
+      console.error('triage: computation failed', error)
+      setStatus('error')
+    }
   }, [database])
 
   return { status, results, progress, start }

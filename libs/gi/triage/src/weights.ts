@@ -128,11 +128,21 @@ export function computeStatWeights(
 export async function computeRosterWeights(
   database: ArtCharDatabase,
   charKeys: CharacterKey[],
-  onProgress?: (done: number, total: number) => void
+  onProgress?: (done: number, total: number) => void,
+  compute: (
+    database: ArtCharDatabase,
+    charKey: CharacterKey
+  ) => StatWeights | undefined = computeStatWeights
 ): Promise<WeightsByChar> {
   const byChar: WeightsByChar = {}
   for (let i = 0; i < charKeys.length; i++) {
-    const weights = computeStatWeights(database, charKeys[i])
+    let weights: StatWeights | undefined
+    try {
+      weights = compute(database, charKeys[i])
+    } catch (error) {
+      // One character's formula must not take the whole roster down.
+      console.error(`triage: weights failed for ${charKeys[i]}`, error)
+    }
     if (weights) byChar[charKeys[i]] = weights
     onProgress?.(i + 1, charKeys.length)
     // Keep the page responsive; one character per frame is plenty.
