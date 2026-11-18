@@ -21,6 +21,7 @@ import { Suspense, useCallback, useMemo } from 'react'
 import type { dataContextObj } from '../../context'
 import { DataContext } from '../../context'
 import { useCharData } from '../../hooks'
+import { BuildScore } from './BuildScore'
 import {
   CharacterCardEquipmentRow,
   CharacterCardHeader,
@@ -172,6 +173,7 @@ function ExistingCharacterCardContent({
             padding: hideStats ? `${theme.spacing(1)}!important` : undefined,
           })}
         >
+          {!hideStats && <BuildScore characterKey={characterKey} />}
           <CharacterCardEquipmentRow />
           {!hideStats && <CharacterCardStats />}
         </Box>
