@@ -147,11 +147,6 @@ export default function PageArtifact() {
 
       {noArtifact && <AddArtInfo />}
 
-      <ArtifactFilter
-        numShowing={filteredArtIds.length}
-        total={totalArtNum}
-        artifactIds={filteredArtIds}
-      />
       <CardThemed>
         <CardContent>
           <Box
@@ -161,12 +156,14 @@ export default function PageArtifact() {
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
+              gap: 1,
             }}
           >
             <ShowingAndSortOptionSelect
               showingTextProps={showingTextProps}
               sortByButtonProps={sortByButtonProps}
             />
+            <ArtifactFilter artifactIds={filteredArtIds} />
           </Box>
           <ArtifactRedButtons artifactIds={filteredArtIds} />
         </CardContent>

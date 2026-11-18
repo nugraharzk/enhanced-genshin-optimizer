@@ -1,90 +1,90 @@
-import { CardThemed, SqBadge } from '@genshin-optimizer/common/ui'
+import { SqBadge } from '@genshin-optimizer/common/ui'
 import type { ICachedArtifact } from '@genshin-optimizer/gi/db'
 import { useDatabase, useDisplayArtifact } from '@genshin-optimizer/gi/db-ui'
+import { initialFilterOption } from '@genshin-optimizer/gi/schema'
 import type { FilterOption } from '@genshin-optimizer/gi/schema'
-import { ArtifactFilterDisplay } from '@genshin-optimizer/gi/ui'
+import {
+  ArtifactFilterDisplay,
+  FilterDrawer,
+  activeFilterCount,
+  useFilterDraft,
+} from '@genshin-optimizer/gi/ui'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import LockIcon from '@mui/icons-material/Lock'
 import LockOpenIcon from '@mui/icons-material/LockOpen'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
-import ReplayIcon from '@mui/icons-material/Replay'
-import { Button, CardContent, Grid, Skeleton, Typography } from '@mui/material'
-import { Suspense, useCallback, useMemo } from 'react'
+import { Button, Grid, Typography } from '@mui/material'
+import { SlidersHorizontal } from 'lucide-react'
+import { Suspense, useCallback, useMemo, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 
+/**
+ * Filters live in a draft-based side drawer: controls edit a local copy and
+ * only Apply writes it to the database, so a half-made change never
+ * re-renders the grid behind the drawer.
+ */
 export default function ArtifactFilter({
-  numShowing,
-  total,
   artifactIds,
 }: {
-  numShowing: number
-  total: number
   artifactIds: string[]
 }) {
   const { t } = useTranslation(['artifact', 'ui'])
   const database = useDatabase()
   const { filterOption } = useDisplayArtifact()
-  const filterOptionDispatch = useCallback(
-    (option: Partial<FilterOption>) =>
-      database.displayArtifact.set({
-        filterOption: { ...filterOption, ...option },
-      }),
-    [database, filterOption]
+  const [open, setOpen] = useState(false)
+  const { draft, seed, update, reset } = useFilterDraft(
+    filterOption,
+    initialFilterOption()
   )
 
+  const openDrawer = useCallback(() => {
+    seed()
+    setOpen(true)
+  }, [seed])
+
+  const apply = useCallback(() => {
+    database.displayArtifact.set({ filterOption: draft })
+    setOpen(false)
+  }, [database, draft])
+
   return (
-    <Suspense
-      fallback={<Skeleton variant="rectangular" width="100%" height={300} />}
-    >
-      <CardThemed>
-        <CardContent>
-          <Grid container>
-            <Grid>
-              <Typography variant="h6">
-                <Trans t={t} i18nKey="artifactFilter">
-                  Artifact Filter
-                </Trans>
-              </Typography>
-            </Grid>
-            <Grid
-              sx={{
-                flexGrow: 1,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Typography>
-                <strong>{numShowing}</strong> / {total}
-              </Typography>
-            </Grid>
-            <Grid>
-              <Button
-                size="small"
-                color="error"
-                onClick={() =>
-                  database.displayArtifact.set({ action: 'reset' })
-                }
-                startIcon={<ReplayIcon />}
-              >
-                <Trans t={t} i18nKey="ui:reset" />
-              </Button>
-            </Grid>
-          </Grid>
-          <Suspense
-            fallback={
-              <Skeleton variant="rectangular" width="100%" height={400} />
-            }
-          >
-            <ArtifactFilterDisplay
-              filterOption={filterOption}
-              filterOptionDispatch={filterOptionDispatch}
-              filteredIds={artifactIds}
-            />
-          </Suspense>
-        </CardContent>
-      </CardThemed>
-    </Suspense>
+    <>
+      <Button
+        onClick={openDrawer}
+        startIcon={<SlidersHorizontal size={16} />}
+        aria-label="Filters"
+      >
+        <Trans t={t} i18nKey="artifactFilter">
+          Artifact Filter
+        </Trans>
+        <SqBadge
+          sx={{ ml: 1 }}
+          color={
+            activeFilterCount(initialFilterOption(), filterOption)
+              ? 'success'
+              : 'secondary'
+          }
+        >
+          {activeFilterCount(initialFilterOption(), filterOption)}
+        </SqBadge>
+      </Button>
+      <FilterDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        onApply={apply}
+        onReset={reset}
+        activeCount={activeFilterCount(initialFilterOption(), draft)}
+        title={t('artifactFilter', 'Filters')}
+      >
+        <Suspense fallback={null}>
+          <ArtifactFilterDisplay
+            filterOption={draft}
+            filterOptionDispatch={update}
+            filteredIds={artifactIds}
+          />
+        </Suspense>
+      </FilterDrawer>
+    </>
   )
 }
 
