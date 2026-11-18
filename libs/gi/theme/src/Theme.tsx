@@ -1,5 +1,22 @@
 import { theme as commonTheme } from '@genshin-optimizer/common/ui'
-import { createTheme } from '@mui/material'
+import {
+  CssBaseline,
+  ThemeProvider as MuiThemeProvider,
+  createTheme,
+} from '@mui/material'
+import type { ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import type { ThemeDef, ThemeId } from './tokens'
+import {
+  DEFAULT_THEME,
+  THEMES,
+  THEME_STORAGE_KEY,
+  applyThemeVars,
+  readStoredTheme,
+} from './tokens'
+
+const FONT_STACK =
+  'Inter, Roboto, system-ui, -apple-system, "Segoe UI", sans-serif'
 
 declare module '@mui/material/styles' {
   interface Palette {
@@ -190,10 +207,60 @@ declare module '@mui/material/SvgIcon' {
   }
 }
 
-export const theme = createTheme({
-  ...commonTheme,
-  palette: {
-    ...commonTheme.palette,
+/**
+ * GO components hardcode `neutral900.main`, `neutral800.main`, ... instead of
+ * `background.paper`, so overriding `background` alone leaves every card dark
+ * in a light theme. Re-point the whole ramp at the tokens for light modes;
+ * dark modes keep upstream's ramp, which already matches.
+ */
+function neutralRamp(t: ThemeDef) {
+  const tones: Record<string, string> = {
+    neutral100: t.text,
+    neutral200: t.text,
+    neutral300: t.text,
+    neutral400: t.textDim,
+    neutral500: t.textDim,
+    neutral600: t.borderStrong,
+    neutral700: t.border,
+    neutral800: t.surface2,
+    neutral900: t.surface,
+    // CardThemed / CodeBlock paint surfaces from these, not background.paper
+    contentDark: t.bg,
+    contentDarker: t.bg,
+    contentNormal: t.surface,
+    contentLight: t.surface2,
+  }
+  const out: Record<string, unknown> = {}
+  for (const [name, color] of Object.entries(tones))
+    out[name] = commonTheme.palette.augmentColor({
+      color: { main: color, light: color, dark: color },
+      name,
+    })
+  return out
+}
+
+function themeFor(t: ThemeDef) {
+  return createTheme({
+    ...commonTheme,
+    shape: { borderRadius: t.radius },
+    typography: { ...commonTheme.typography, fontFamily: FONT_STACK },
+    palette: {
+      ...commonTheme.palette,
+      mode: t.mode,
+      background: { default: t.bg, paper: t.surface },
+      text: {
+        primary: t.text,
+        secondary: t.textDim,
+        disabled: `${t.textDim}80`,
+      },
+      divider: t.border,
+      primary: commonTheme.palette.augmentColor({
+        color: { main: t.accent, contrastText: t.accentText },
+        name: 'primary',
+      }),
+      // every theme paints surfaces from its own tokens; upstream's fixed navy
+      // ramp is what made all dark themes look identical
+      ...(neutralRamp(t) as Record<string, never>),
     geo: commonTheme.palette.augmentColor({
       color: { main: '#f8ba4e', contrastText: '#222' },
       name: 'geo',
@@ -311,4 +378,67 @@ export const theme = createTheme({
       name: 'stellarswirl',
     }),
   },
+    components: {
+      MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+      MuiButton: {
+        defaultProps: { disableElevation: true },
+        styleOverrides: {
+          root: { textTransform: 'none', fontWeight: 600 },
+        },
+      },
+      MuiCard: { styleOverrides: { root: { borderRadius: t.radius } } },
+      MuiDialog: { styleOverrides: { paper: { borderRadius: t.radius } } },
+      MuiMenu: { styleOverrides: { paper: { borderRadius: t.radius } } },
+      MuiChip: {
+        styleOverrides: {
+          root: { borderRadius: Math.max(6, t.radius - 4), fontWeight: 600 },
+        },
+      },
+      MuiTab: { styleOverrides: { root: { textTransform: 'none', fontWeight: 600 } } },
+      MuiTooltip: {
+        styleOverrides: { tooltip: { borderRadius: 8, fontSize: 12 } },
+      },
+    },
+  })
+}
+
+/** Static MUI theme for code paths outside the provider (tests, portals). */
+export const theme = themeFor(THEMES[DEFAULT_THEME])
+
+interface ThemeCtxValue {
+  themeId: ThemeId
+  setThemeId: (id: ThemeId) => void
+}
+
+const ThemeCtx = createContext<ThemeCtxValue>({
+  themeId: DEFAULT_THEME,
+  setThemeId: () => {},
 })
+
+export const useGOTheme = () => useContext(ThemeCtx)
+
+export function GOThemeProvider({ children }: { children: ReactNode }) {
+  const [themeId, setThemeId] = useState<ThemeId>(() => readStoredTheme())
+  const def = THEMES[themeId]
+
+  useEffect(() => {
+    applyThemeVars(def)
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, themeId)
+    } catch {
+      /* storage can be blocked */
+    }
+  }, [def, themeId])
+
+  const muiTheme = useMemo(() => themeFor(def), [def])
+  const value = useMemo(() => ({ themeId, setThemeId }), [themeId])
+
+  return (
+    <ThemeCtx.Provider value={value}>
+      <MuiThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
+    </ThemeCtx.Provider>
+  )
+}

@@ -4,6 +4,7 @@
 import { resolve } from 'node:path'
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 /// <reference types="vitest" />
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, normalizePath } from 'vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
@@ -26,6 +27,7 @@ export default defineConfig(() => ({
 
   plugins: [
     react(),
+    tailwindcss(),
     nxViteTsPaths(),
     // Nx executor for vite does not support `assets` prop for copying files.
     // So we need to do it with this plugin. This works for both `build` and `serve`.

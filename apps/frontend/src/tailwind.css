@@ -1,0 +1,91 @@
+/*
+ * Tailwind for the parts of the UI that are not on MUI yet.
+ *
+ * Only `theme` and `utilities` are imported — no preflight — so adding Tailwind
+ * cannot reset the ~300 existing MUI screens. Utilities read the same design
+ * tokens the MUI theme is built from (see libs/gi/theme/src/tokens.ts), so a
+ * theme switch repaints both halves at once.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@source './app';
+
+@theme inline {
+  --color-bg: var(--go-bg);
+  --color-surface: var(--go-surface);
+  --color-surface2: var(--go-surface-2);
+  --color-line: var(--go-border);
+  --color-line-strong: var(--go-border-strong);
+  --color-fg: var(--go-text);
+  --color-fg-dim: var(--go-text-dim);
+  --color-accent: var(--go-accent);
+  --color-accent-hover: var(--go-accent-hover);
+  --color-accent-fg: var(--go-accent-text);
+  --radius-go: var(--go-radius);
+  --font-sans: Inter, Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* GO's index.css pins Roboto on body; the token theme wants Inter. Unlayered +
+   last-loaded, so it wins without touching upstream CSS. */
+html body {
+  font-family: Inter, Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tailwind ships no preflight here, so UA chrome (grey button faces, inherited
+   fonts, `outset` borders) would leak into the new shell components. This lives
+   in the `base` layer so utilities like `bg-surface2` still win over it. */
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    background: transparent;
+    border: 0;
+  }
+  kbd {
+    font-family: inherit;
+  }
+  /* upstream index.css forced `a { color: white; font-family: monospace }`
+     globally, which beat every layered utility and made links invisible on
+     light themes. Inheriting is the sane default; components that need a
+     colour set it with a utility. */
+  a {
+    color: inherit;
+    font-family: inherit;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--go-accent) 35%, transparent);
+  }
+}
+
+/* Scrollbars must follow the theme too: Chromium falls back to a light track
+   on dark themes otherwise, which is the most visible "unthemed" surface. */
+* {
+  scrollbar-color: var(--go-border-strong) transparent;
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--go-border-strong);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--go-accent);
+  background-clip: content-box;
+}

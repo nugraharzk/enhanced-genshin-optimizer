@@ -22,7 +22,7 @@ div#formula > * {
 }
 
 body {
-  background: radial-gradient(ellipse at bottom, #1b2735 0%, #0c1020 100%);
+  background: var(--go-bg, #0a0a0f);
 }
 
 @function random_range($min, $max) {
