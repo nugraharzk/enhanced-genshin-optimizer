@@ -26,6 +26,8 @@ import {
   artifactSortConfigs,
   artifactSortMap,
 } from '@genshin-optimizer/gi/util'
+import type { VerdictFilter } from '@genshin-optimizer/gi/triage'
+import { applyTriageView } from '@genshin-optimizer/gi/triage'
 import AddIcon from '@mui/icons-material/Add'
 import DifferenceIcon from '@mui/icons-material/Difference'
 import { Box, Button, CardContent, Grid, Skeleton } from '@mui/material'
@@ -34,6 +36,8 @@ import { useTranslation } from 'react-i18next'
 import ArtifactFilter, { ArtifactRedButtons } from './ArtifactFilter'
 import DupModal from './DupModal'
 import ArtifactInfoDisplay from './InfoDisplay'
+import { TriageToolbar } from './TriageToolbar'
+import { useTriage } from './useTriage'
 
 const columns = { xs: 1, sm: 2, md: 3, lg: 3, xl: 4 }
 const numToShowMap = { xs: 5, sm: 6, md: 12, lg: 12, xl: 12 }
@@ -46,6 +50,10 @@ export default function PageArtifact() {
   const [artifactIdToEdit, setArtifactIdToEdit] = useState<string | undefined>()
 
   const [showDup, onShowDup, onHideDup] = useBoolState(false)
+
+  const [triageOn, setTriageOn] = useState(false)
+  const [verdictFilter, setVerdictFilter] = useState<VerdictFilter>('all')
+  const triage = useTriage(database)
 
   const brPt = useMediaQueryUp()
 
@@ -86,18 +94,33 @@ export default function PageArtifact() {
       .map((art) => art.id)
   }, [deferredArtifactDisplayState, allArts, filterConfigs, sortConfigs])
 
+  useEffect(() => {
+    if (triageOn && triage.status === 'idle') void triage.start()
+  }, [triageOn, triage.status, triage.start])
+
+  // Triage mode filters and sorts locally; the shared display state is never
+  // written, so the web and desktop builds stay compatible.
+  const visibleArtIds = useMemo(() => {
+    if (!triageOn || !triage.results) return filteredArtIds
+    return applyTriageView(
+      allArts.map((art) => art.id),
+      triage.results,
+      verdictFilter
+    )
+  }, [triageOn, triage.results, verdictFilter, allArts, filteredArtIds])
+
   const { numShow, setTriggerElement } = useInfScroll(
     numToShowMap[brPt],
-    filteredArtIds.length
+    visibleArtIds.length
   )
   const artifactIdsToShow = useMemo(
-    () => filteredArtIds.slice(0, numShow),
-    [filteredArtIds, numShow]
+    () => visibleArtIds.slice(0, numShow),
+    [visibleArtIds, numShow]
   )
   //for pagination
   const totalShowing =
-    filteredArtIds.length !== totalArtNum
-      ? `${filteredArtIds.length}/${totalArtNum}`
+    visibleArtIds.length !== totalArtNum
+      ? `${visibleArtIds.length}/${totalArtNum}`
       : `${totalArtNum}`
   const showingTextProps = {
     numShowing: artifactIdsToShow.length,
@@ -161,11 +184,23 @@ export default function PageArtifact() {
           >
             <ShowingAndSortOptionSelect
               showingTextProps={showingTextProps}
-              sortByButtonProps={sortByButtonProps}
+              sortByButtonProps={triageOn ? undefined : sortByButtonProps}
             />
-            <ArtifactFilter artifactIds={filteredArtIds} />
+            <ArtifactFilter artifactIds={visibleArtIds} />
           </Box>
-          <ArtifactRedButtons artifactIds={filteredArtIds} />
+          {triageOn && triage.results ? (
+            <TriageToolbar
+              database={database}
+              status={triage.status}
+              progress={triage.progress}
+              results={triage.results}
+              visibleIds={visibleArtIds}
+              filter={verdictFilter}
+              onFilterChange={setVerdictFilter}
+              onRecompute={() => void triage.start()}
+            />
+          ) : null}
+          <ArtifactRedButtons artifactIds={visibleArtIds} />
         </CardContent>
       </CardThemed>
       <Grid container columns={columns} spacing={1}>
@@ -189,6 +224,16 @@ export default function PageArtifact() {
             {t('showDup')}
           </Button>
         </Grid>
+        <Grid size={1}>
+          <Button
+            fullWidth
+            onClick={() => setTriageOn((on) => !on)}
+            color={triageOn ? 'success' : 'info'}
+            variant={triageOn ? 'contained' : 'outlined'}
+          >
+            Triage
+          </Button>
+        </Grid>
       </Grid>
       <Suspense
         fallback={
@@ -204,6 +249,7 @@ export default function PageArtifact() {
               <ArtifactCard
                 artifactId={artId}
                 effFilter={effFilterSet}
+                triage={triage.results?.get(artId)}
                 onDelete={() => database.arts.remove(artId)}
                 onEdit={() => setArtifactIdToEdit(artId)}
                 setLocation={(location) =>
@@ -216,7 +262,7 @@ export default function PageArtifact() {
             </Grid>
           ))}
         </Grid>
-        {filteredArtIds.length !== artifactIdsToShow.length && (
+        {visibleArtIds.length !== artifactIdsToShow.length && (
           <Skeleton
             ref={(node) => {
               if (!node) return

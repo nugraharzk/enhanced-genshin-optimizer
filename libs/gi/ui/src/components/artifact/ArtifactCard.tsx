@@ -98,7 +98,9 @@ type Data = {
 }
 const allSubstatFilter = new Set(allSubstatKeys)
 
-export function ArtifactCard(props: { artifactId: string } & Data) {
+export function ArtifactCard(
+  props: { artifactId: string; triage?: TriageResult } & Data
+) {
   const { artifactId, ...rest } = props
   const artifact = useArtifact(artifactId)
   if (!artifact) return null
